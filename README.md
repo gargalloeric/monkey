@@ -40,7 +40,7 @@ Clone the repository and launch the REPL:
 ```sh
 git clone https://github.com/gargalloeric/monkey.git
 cd monkey
-go run main.go
+make run
 ```
 
 Then you can directly run Monkey code inside the REPL, for example:
