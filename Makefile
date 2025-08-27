@@ -18,3 +18,19 @@ tidy:
 test:
 	@echo 'Running go tests...'
 	@go test -v ./...
+
+# ============================================================================== #
+# DEVELOPMENT
+# ============================================================================== #
+
+## run: run the main.go file inside the cmd folder
+.PHONY: run
+run:
+	@echo 'Running application...'
+	@go run ./cmd/main.go
+
+## build: build the Go application into a binary
+.PHONY: build
+build:
+	@echo 'Building application...'
+	@go build -o bin/app ./cmd/main.go
