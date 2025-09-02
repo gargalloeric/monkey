@@ -1,9 +1,14 @@
 package ast
 
-import "github.com/gargalloeric/monkey/internal/token"
+import (
+	"bytes"
+
+	"github.com/gargalloeric/monkey/internal/token"
+)
 
 type Node interface {
 	TokenLiteral() string
+	String() string
 }
 
 type Statement interface {
@@ -28,6 +33,16 @@ func (p *Program) TokenLiteral() string {
 	}
 }
 
+func (p *Program) String() string {
+	var out bytes.Buffer
+
+	for _, s := range p.Statements {
+		out.WriteString(s.String())
+	}
+
+	return out.String()
+}
+
 type LetStatement struct {
 	Token token.Token // the token.LET token
 	Name  *Identifier
@@ -38,6 +53,21 @@ func (l *LetStatement) statementNode() {}
 
 func (l *LetStatement) TokenLiteral() string {
 	return l.Token.Literal
+}
+
+func (l *LetStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(l.TokenLiteral() + " ")
+	out.WriteString(l.Name.String())
+	out.WriteString(" = ")
+
+	if l.Value != nil {
+		out.WriteString(l.Value.String())
+	}
+	out.WriteString(";")
+
+	return out.String()
 }
 
 type Identifier struct {
@@ -51,6 +81,10 @@ func (i *Identifier) TokenLiteral() string {
 	return i.Token.Literal
 }
 
+func (i *Identifier) String() string {
+	return i.Value
+}
+
 type ReturnStatement struct {
 	Token       token.Token // The return token
 	ReturnValue Expression
@@ -61,3 +95,35 @@ func (rs *ReturnStatement) TokenLiteral() string {
 }
 
 func (rs *ReturnStatement) statementNode() {}
+
+func (rs *ReturnStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(rs.TokenLiteral() + " ")
+	if rs.ReturnValue != nil {
+		out.WriteString(rs.ReturnValue.String())
+	}
+
+	out.WriteString(";")
+
+	return out.String()
+}
+
+type ExpressionStatement struct {
+	Token      token.Token // the first token of the expression
+	Expression Expression
+}
+
+func (e *ExpressionStatement) TokenLiteral() string {
+	return e.Token.Literal
+}
+
+func (e *ExpressionStatement) statementNode() {}
+
+func (e *ExpressionStatement) String() string {
+	if e.Expression != nil {
+		return e.Expression.String()
+	}
+
+	return ""
+}
