@@ -8,6 +8,19 @@ import (
 	"github.com/gargalloeric/monkey/internal/token"
 )
 
+// The order matter because the go in an ascending order 1 to 7, this order
+// will later be used to determine the operation precedence.
+const (
+	_ int = iota
+	LOWEST
+	EQUALS      // ==
+	LESSGREATER // > or <
+	SUM         // +
+	PRODUCT     // *
+	PREFIX      // -X or !X
+	CALL        // myFunction(X)
+)
+
 type (
 	prefixParseFunc func() ast.Expression
 	infixParseFunc  func(ast.Expression) ast.Expression
@@ -35,7 +48,14 @@ func New(l *lexer.Lexer) *Parser {
 	p.nextToken()
 	p.nextToken()
 
+	p.prefixParseFuncs = make(map[token.TokenType]prefixParseFunc)
+	p.registerPrefix(token.IDENT, p.parseIdentifier)
+
 	return p
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 }
 
 func (p *Parser) Errors() []string {
@@ -76,7 +96,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		return p.parseReturnStatement()
 	default:
-		return nil
+		return p.parseExpressionStatement()
 	}
 }
 
@@ -140,4 +160,26 @@ func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFunc) {
 
 func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFunc) {
 	p.infixParseFuncs[tokenType] = fn
+}
+
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	stmt := &ast.ExpressionStatement{Token: p.curToken}
+
+	stmt.Expression = p.parseExpression(LOWEST)
+
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	prefix, ok := p.prefixParseFuncs[p.curToken.Type]
+	if !ok {
+		return nil
+	}
+	leftExp := prefix()
+
+	return leftExp
 }
